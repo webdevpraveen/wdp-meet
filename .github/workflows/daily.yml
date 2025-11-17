@@ -1,8 +1,11 @@
 name: Daily Contribution Commit
 
 on:
-  schedule:
-    - cron: "0 4 * * *"   # 10 AM IST daily
+schedule:
+    # 10 AM IST  → 04:30 UTC
+    - cron: "30 4 * * *"
+    # 10 PM IST  → 16:30 UTC
+    - cron: "30 16 * * *"
   workflow_dispatch:
 
 jobs:
