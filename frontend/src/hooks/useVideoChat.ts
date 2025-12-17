@@ -56,10 +56,27 @@ export const useVideoChat = () => {
   }, []);
 
   // ---------------- PEER ----------------
-  const setupPeerConnection = useCallback(() => {
-    const pc = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-    });
+  const pc = new RTCPeerConnection({
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    {
+      urls: "turn:global.relay.metered.ca:80",
+      username: "YOUR_USERNAME",
+      credential: "YOUR_PASSWORD",
+    },
+    {
+      urls: "turn:global.relay.metered.ca:443",
+      username: "YOUR_USERNAME",
+      credential: "YOUR_PASSWORD",
+    },
+    {
+      urls: "turn:global.relay.metered.ca:443?transport=tcp",
+      username: "4d1a2e03c2879c896d2aa9fc",
+      credential: "lmKVk1svJmWyu7iS",
+    },
+  ],
+});
+
 
     peerConnectionRef.current = pc;
     remoteStreamRef.current = new MediaStream();
