@@ -2,13 +2,21 @@ import { useState, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import { ConnectionStatus } from "@/components/StatusDisplay";
 
+//  AUDIO ALERTS (assets folder)
+const joinAudio = new Audio("/assets/join.mp3");
+const leaveAudio = new Audio("/assets/leave.mp3");
+
+// mobile friendly
+joinAudio.preload = "auto";
+leaveAudio.preload = "auto";
+
 export const useVideoChat = () => {
   const [status, setStatus] = useState<ConnectionStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [isStarted, setIsStarted] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
 
-  //  NEW FLAGS (UI SYNC)
+  // UI SYNC FLAGS
   const [hasLocalStream, setHasLocalStream] = useState(false);
   const [hasRemoteStream, setHasRemoteStream] = useState(false);
 
@@ -40,7 +48,7 @@ export const useVideoChat = () => {
         await localVideoRef.current.play();
       }
 
-      setHasLocalStream(true); 
+      setHasLocalStream(true);
       return true;
     } catch (err) {
       console.error(err);
@@ -62,7 +70,7 @@ export const useVideoChat = () => {
       pc.addTrack(track, localStreamRef.current!);
     });
 
-  
+    // 🔥 STABLE REMOTE STREAM (NO FREEZE)
     pc.ontrack = (event) => {
       event.streams[0]?.getTracks().forEach((track) => {
         remoteStreamRef.current.addTrack(track);
@@ -82,7 +90,7 @@ export const useVideoChat = () => {
         };
       }
 
-      setHasRemoteStream(true); 
+      setHasRemoteStream(true);
       setIsConnected(true);
       setStatus("connected");
     };
@@ -103,7 +111,11 @@ export const useVideoChat = () => {
 
     socket.on("waiting", () => setStatus("searching"));
 
+    //  JOIN SOUND
     socket.on("matched", async ({ initiator }) => {
+      joinAudio.currentTime = 0;
+      joinAudio.play().catch(() => {});
+
       if (!peerConnectionRef.current) return;
 
       if (initiator) {
@@ -131,7 +143,11 @@ export const useVideoChat = () => {
       } catch {}
     });
 
+    //  LEAVE SOUND
     socket.on("partner-left", () => {
+      leaveAudio.currentTime = 0;
+      leaveAudio.play().catch(() => {});
+
       setHasRemoteStream(false);
       setIsConnected(false);
       setStatus("searching");
@@ -152,6 +168,9 @@ export const useVideoChat = () => {
   }, [initCamera, setupPeerConnection, connectToSignalingServer]);
 
   const nextStranger = useCallback(() => {
+    leaveAudio.currentTime = 0;
+    leaveAudio.play().catch(() => {});
+
     peerConnectionRef.current?.close();
     peerConnectionRef.current = null;
 
@@ -168,6 +187,9 @@ export const useVideoChat = () => {
   }, [setupPeerConnection]);
 
   const endCall = useCallback(() => {
+    leaveAudio.currentTime = 0;
+    leaveAudio.play().catch(() => {});
+
     peerConnectionRef.current?.close();
     peerConnectionRef.current = null;
 
