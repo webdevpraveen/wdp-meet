@@ -24,7 +24,6 @@ const VideoContainer: React.FC<VideoContainerProps> = ({
         id={id}
         autoPlay
         playsInline
-        muted={isLocal}
         className="w-full h-full object-cover rounded-xl"
       />
       

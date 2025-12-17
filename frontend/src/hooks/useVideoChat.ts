@@ -53,12 +53,22 @@ export const useVideoChat = () => {
     }
 
     pc.ontrack = (event) => {
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = event.streams[0];
-        setIsConnected(true);
-        setStatus("connected");
-      }
-    };
+  const remoteVideo = remoteVideoRef.current;
+  if (!remoteVideo) return;
+
+  remoteVideo.srcObject = event.streams[0];
+
+  // 🔥 MOBILE + DESKTOP autoplay fix
+  remoteVideo.onloadedmetadata = () => {
+    remoteVideo
+      .play()
+      .catch(() => console.log("Autoplay blocked, waiting for user interaction"));
+  };
+
+  setIsConnected(true);
+  setStatus("connected");
+};
+
 
     pc.onicecandidate = (event) => {
       if (event.candidate && socketRef.current) {
