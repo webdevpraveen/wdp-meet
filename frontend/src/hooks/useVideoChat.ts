@@ -2,21 +2,12 @@ import { useState, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import { ConnectionStatus } from "@/components/StatusDisplay";
 
-//  AUDIO ALERTS (assets folder)
-const joinAudio = new Audio("/assets/join.mp3");
-const leaveAudio = new Audio("/assets/leave.mp3");
-
-// mobile friendly
-joinAudio.preload = "auto";
-leaveAudio.preload = "auto";
-
 export const useVideoChat = () => {
   const [status, setStatus] = useState<ConnectionStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [isStarted, setIsStarted] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
 
-  // UI SYNC FLAGS
   const [hasLocalStream, setHasLocalStream] = useState(false);
   const [hasRemoteStream, setHasRemoteStream] = useState(false);
 
@@ -28,6 +19,17 @@ export const useVideoChat = () => {
 
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const socketRef = useRef<Socket | null>(null);
+
+  //  AUDIO REFS (created after user interaction)
+  const joinAudioRef = useRef<HTMLAudioElement | null>(null);
+  const leaveAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  //  vibration helper
+  const vibrate = (pattern: number | number[]) => {
+    if ("vibrate" in navigator) {
+      navigator.vibrate(pattern);
+    }
+  };
 
   // ---------------- CAMERA ----------------
   const initCamera = useCallback(async () => {
@@ -70,7 +72,6 @@ export const useVideoChat = () => {
       pc.addTrack(track, localStreamRef.current!);
     });
 
-    // 🔥 STABLE REMOTE STREAM (NO FREEZE)
     pc.ontrack = (event) => {
       event.streams[0]?.getTracks().forEach((track) => {
         remoteStreamRef.current.addTrack(track);
@@ -80,14 +81,7 @@ export const useVideoChat = () => {
       if (remoteVideo && remoteVideo.srcObject !== remoteStreamRef.current) {
         remoteVideo.srcObject = remoteStreamRef.current;
         remoteVideo.playsInline = true;
-
-        remoteVideo.onloadedmetadata = async () => {
-          try {
-            await remoteVideo.play();
-          } catch {
-            console.log("Autoplay blocked");
-          }
-        };
+        remoteVideo.onloadedmetadata = () => remoteVideo.play().catch(() => {});
       }
 
       setHasRemoteStream(true);
@@ -111,10 +105,10 @@ export const useVideoChat = () => {
 
     socket.on("waiting", () => setStatus("searching"));
 
-    //  JOIN SOUND
     socket.on("matched", async ({ initiator }) => {
-      joinAudio.currentTime = 0;
-      joinAudio.play().catch(() => {});
+      //  JOIN ALERT
+      joinAudioRef.current?.play().catch(() => {});
+      vibrate([200, 100, 200]);
 
       if (!peerConnectionRef.current) return;
 
@@ -143,10 +137,10 @@ export const useVideoChat = () => {
       } catch {}
     });
 
-    //  LEAVE SOUND
     socket.on("partner-left", () => {
-      leaveAudio.currentTime = 0;
-      leaveAudio.play().catch(() => {});
+      //  LEAVE ALERT
+      leaveAudioRef.current?.play().catch(() => {});
+      vibrate(300);
 
       setHasRemoteStream(false);
       setIsConnected(false);
@@ -156,6 +150,18 @@ export const useVideoChat = () => {
 
   // ---------------- ACTIONS ----------------
   const startCall = useCallback(async () => {
+    //  AUDIO UNLOCK (CRITICAL)
+    joinAudioRef.current = new Audio("/assets/join.mp3");
+    leaveAudioRef.current = new Audio("/assets/leave.mp3");
+    joinAudioRef.current.preload = "auto";
+    leaveAudioRef.current.preload = "auto";
+
+    // play & pause once to unlock
+    joinAudioRef.current.play().then(() => {
+      joinAudioRef.current?.pause();
+      joinAudioRef.current!.currentTime = 0;
+    }).catch(() => {});
+
     const ok = await initCamera();
     if (!ok) return;
 
@@ -168,8 +174,8 @@ export const useVideoChat = () => {
   }, [initCamera, setupPeerConnection, connectToSignalingServer]);
 
   const nextStranger = useCallback(() => {
-    leaveAudio.currentTime = 0;
-    leaveAudio.play().catch(() => {});
+    leaveAudioRef.current?.play().catch(() => {});
+    vibrate(200);
 
     peerConnectionRef.current?.close();
     peerConnectionRef.current = null;
@@ -187,8 +193,8 @@ export const useVideoChat = () => {
   }, [setupPeerConnection]);
 
   const endCall = useCallback(() => {
-    leaveAudio.currentTime = 0;
-    leaveAudio.play().catch(() => {});
+    leaveAudioRef.current?.play().catch(() => {});
+    vibrate(400);
 
     peerConnectionRef.current?.close();
     peerConnectionRef.current = null;
@@ -223,3 +229,4 @@ export const useVideoChat = () => {
     endCall,
   };
 };
+// ---------------- KHATAM ----------------
