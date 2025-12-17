@@ -137,7 +137,7 @@ Create an issue or submit a pull request to improve the project.
 
 ---
 
-## 📄 License
+## 📄 [License](https://github.com/webdevpraveen/wdp-meet?tab=License-1-ov-file)
   This project is licensed under **CC BY-NC-ND 4.0**.  
 Copying or modifying this code outside GitHub is not permitted.
 
