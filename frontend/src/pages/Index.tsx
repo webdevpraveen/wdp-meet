@@ -63,7 +63,7 @@ const Index: React.FC = () => {
         {/* Info Footer */}
         <footer className="mt-auto pt-8 text-center">
           <p className="text-xs text-muted-foreground/60 max-w-md mx-auto leading-relaxed">
-            A Omegle like Software where you can video chat with random strangers anonymously. No
+            An Omegle like Software where you can video chat with random strangers anonymously. No
             registration required. Built with React, TypeScript, and WebRTC.
           </p>
         </footer>
